@@ -22,7 +22,8 @@ uint32_t button_mask = (1UL << BUTTON_X) | (1UL << BUTTON_Y) | (1UL << BUTTON_ST
                        (1UL << BUTTON_A) | (1UL << BUTTON_B) | (1UL << BUTTON_SELECT);
 
 // Dot positions
-int blue_x = SCREEN_WIDTH / 2, blue_y = SCREEN_HEIGHT / 2;
+int blue_x = SCREEN_WIDTH / 2, 
+blue_y = SCREEN_HEIGHT / 2;
 int red_x = SCREEN_WIDTH / 4, red_y = SCREEN_HEIGHT / 4;
 
 // Store last positions for optimized screen updates
@@ -128,16 +129,16 @@ void setup() {
     }
     Serial.println("seesaw started");
 
-    uint32_t version = ((ss.getVersion() >> 16) & 0xFFFF);
-    if (version != 5743) {
-        Serial.print("Wrong firmware loaded? ");
-        Serial.println(version);
-        while (1) delay(10);
-    }
-    Serial.println("Found Product 5743");
+    // uint32_t version = ((ss.getVersion() >> 16) & 0xFFFF);
+    // if (version != 5743) {
+    //     Serial.print("Wrong firmware loaded? ");
+    //     Serial.println(version);
+    //     while (1) delay(10);
+    // }
+    // Serial.println("Found Product 5743");
 
-    ss.pinModeBulk(button_mask, INPUT_PULLUP);
-    ss.setGPIOInterrupts(button_mask, 1);
+    // ss.pinModeBulk(button_mask, INPUT_PULLUP);
+    // ss.setGPIOInterrupts(button_mask, 1);
 
     // Start game timer
     start_time = millis();
@@ -174,12 +175,6 @@ void loop() {
 
     // Read button states
     uint32_t buttons = ss.digitalReadBulk(button_mask);
-
-    // Move red dot with D-pad buttons
-    if (!(buttons & (1UL << BUTTON_B))) red_y = min(SCREEN_HEIGHT - DOT_SIZE, red_y + red_speed); // Move Down
-    if (!(buttons & (1UL << BUTTON_Y))) red_x = max(0, red_x - red_speed); // Move Left
-    if (!(buttons & (1UL << BUTTON_X))) red_y = max(0, red_y - red_speed); // Move Up
-    if (!(buttons & (1UL << BUTTON_A))) red_x = min(SCREEN_WIDTH - DOT_SIZE, red_x + red_speed); // Move Right
 
     // Increase blue dot speed with Start button (loop from 1 to 5)
     if (!(buttons & (1UL << BUTTON_START))) {

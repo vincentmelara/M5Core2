@@ -92,7 +92,15 @@ void setup() {
     }
     Serial.print("\n\nConnected to WiFi network with IP address: ");
     Serial.println(WiFi.localIP());
-    
+
+    //initialize VCNL4040 device 
+    I2C_RW::initI2C(VCNL_I2C_ADDRESS, 400000, PIN_SDA, PIN_SCL);
+    I2C_RW::initI2C(SHT_I2C_ADDRESS, 400000, PIN_SDA, PIN_SCL);
+    I2C_RW::scanI2cLinesForAddresses(false);
+
+    // Write registers to initialize/enable VCNL sensors
+    I2C_RW::initVCNL4040Sensors();
+
     timeClient.begin();
     timeClient.setTimeOffset(utcOffsetInSeconds);  // <-- Set the offset for local time
 
@@ -105,11 +113,11 @@ void fetchWeatherDetails() {
     // Hardcode the specific city,state,country into the query
     // Examples: https://api.openweathermap.org/data/2.5/weather?q=riverside,ca,usa&units=imperial&appid=YOUR_API_KEY
     String serverURL = urlOpenWeather + "zip=" + zipCode + ",us&units=imperial&appid=" + apiKey;
-    Serial.println(serverURL); // Debug print
+    // Serial.println(serverURL); // Debug print
 
     // Make GET request and store reponse
     String response = httpGETRequest(serverURL.c_str());
-    Serial.print(response); // Debug print
+    // Serial.print(response); // Debug print
     
     // Import ArduinoJSON Library and then use arduinojson.org/v6/assistant to
     // compute the proper capacity (this is a weird library thing) and initialize
@@ -144,7 +152,7 @@ void fetchWeatherDetails() {
     tempNow = objMain["temp"];
     tempMin = objMain["temp_min"];
     tempMax = objMain["temp_max"];
-    Serial.printf("NOW: %.1f F and %s\tMIN: %.1f F\tMax: %.1f F\n", tempNow, strWeatherDesc, tempMin, tempMax);
+    // Serial.printf("NOW: %.1f F and %s\tMIN: %.1f F\tMax: %.1f F\n", tempNow, strWeatherDesc, tempMin, tempMax);
 }
 
 
@@ -300,8 +308,16 @@ M5.Lcd.print("SAVE");
 // Optional: Add "shiny" pixel effect at the top-left for extra 8-bit style
 M5.Lcd.fillRect(saveButtonX + 4, saveButtonY + 4, 10, 4, TFT_CYAN);
 M5.Lcd.fillRect(saveButtonX + 4, saveButtonY + 8, 6, 2, TFT_CYAN);
-
 }
+
+void drawTempAndHumidity() {
+    M5.Lcd.fillScreen(TFT_GREEN);
+    M5.Lcd.setTextColor(TFT_WHITE);
+    M5.Lcd.setTextSize(3);
+}
+
+
+
 // This method takes in a URL and makes a GET request to the
 // URL, returning the response.
 String httpGETRequest(const char* serverURL) {
@@ -314,13 +330,13 @@ String httpGETRequest(const char* serverURL) {
     int httpResponseCode = http.GET();
     String response = http.getString();
 
-    // Check if got an error
-    if (httpResponseCode > 0)
-        Serial.printf("HTTP Response code: %d\n", httpResponseCode);
-    else {
-        Serial.printf("HTTP Response ERROR code: %d\n", httpResponseCode);
-        Serial.printf("Server Response: %s\n", response);
-    }
+    // // Check if got an error
+    // if (httpResponseCode > 0) 
+    //     Serial.printf("HTTP Response code: %d\n", httpResponseCode);
+    // else {
+    //     // Serial.printf("HTTP Response ERROR code: %d\n", httpResponseCode);
+    //     // Serial.printf("Server Response: %s\n", response);
+    // }
 
     // Free resources and return response
     http.end();
@@ -407,6 +423,8 @@ void loop() {
                 timeClient.update();
                 fetchWeatherDetails();
                 drawWeatherDisplay();
+                I2C_RW::displayVCNL4040Data();
+                I2C_RW::displaySHT40Data();
             } else {
                 Serial.println("WiFi Disconnected");
             }
@@ -415,7 +433,14 @@ void loop() {
 
         // Go to zip code edit screen
         if (M5.BtnB.wasPressed()) {
+            Serial.println("Button B pressed");
             currentScreen = "zip";
+            lastScreen = "";  // Force redraw when switching back
+        }
+        // Go to zip code edit screen
+        if (M5.BtnC.wasPressed()) {
+            Serial.println("Button C pressed");
+            currentScreen = "tempHumidity";
             lastScreen = "";  // Force redraw when switching back
         }
     } 
@@ -462,6 +487,28 @@ void loop() {
             M5.Lcd.fillScreen(TFT_NAVY);  // 🔹 Ensure the screen is cleared before updating
             drawWeatherDisplay();  // 🔹 Force a full redraw
         }
+    } else if (currentScreen == "tempHumidity") {
+        Serial.print("Button C pressed");
+        // Ensure screen is redrawn when switching screens
+        if (lastScreen != "tempHumidity") {
+            drawTempAndHumidity();
+            lastScreen = "tempHumidity";
+        }
+        if (M5.BtnA.wasPressed()) {
+            Serial.println("Button A pressed - Switching to Weather Screen");
+            currentScreen = "weather";
+            lastScreen = "";  // Force full refresh of the screen
+            M5.Lcd.fillScreen(TFT_NAVY);  // 🔹 Ensure the screen is fully cleared before drawing
+            fetchWeatherDetails();
+            drawWeatherDisplay();  // 🔹 Redraw everything immediately
+        }
+        // Go to zip code edit screen
+        if (M5.BtnB.wasPressed()) {
+            currentScreen = "zip";
+            lastScreen = "";  // Force redraw when switching back
+        }
     }
+
+    //---------------VCNL4040 CODE----------------------    
 }
 

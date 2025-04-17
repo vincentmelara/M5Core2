@@ -1,18 +1,14 @@
 #include "./I2C_RW.h"
 
-////////////////////////////////////////////////////////////////////
 // I2C_RW Variable inits
-////////////////////////////////////////////////////////////////////
 int I2C_RW::i2cAddress = 0;
 int I2C_RW::i2cFrequency = 0;
 int I2C_RW::i2cSdaPin = 0;
 int I2C_RW::i2cSclPin = 0;
 
-//////////////////////////////////////////////////////////////////////
 // This method sets the i2C address, frequency and GPIO pins and must
 // be called once anytime you want to communicate to a different device
 // and/or change the parameters for I2C.
-//////////////////////////////////////////////////////////////////////
 void I2C_RW::initI2C(int i2cAddr, int i2cFreq, int pinSda, int pinScl) {
     // Save parameters in case needed later
     i2cAddress = i2cAddr;
@@ -24,10 +20,8 @@ void I2C_RW::initI2C(int i2cAddr, int i2cFreq, int pinSda, int pinScl) {
     Wire.begin(i2cSdaPin, i2cSclPin, i2cFrequency);
 }
 
-//////////////////////////////////////////////////////////////////////
 // Scan the I2C bus for any attached periphials and print out the
 // addresses of each line.
-//////////////////////////////////////////////////////////////////////
 void I2C_RW::scanI2cLinesForAddresses(bool verboseConnectionFailures) {
     byte error, address;
     int nDevices;
@@ -64,10 +58,8 @@ void I2C_RW::scanI2cLinesForAddresses(bool verboseConnectionFailures) {
     delay(100);
 }
 
-//////////////////////////////////////////////////////////////////////
 // Take in the return status of an I2C endTransmission() call and
 // print out the status.
-//////////////////////////////////////////////////////////////////////
 void I2C_RW::printI2cReturnStatus(byte returnStatus, int bytesWritten, const char action[]) {
     switch (returnStatus) {
         case 0:
@@ -88,9 +80,7 @@ void I2C_RW::printI2cReturnStatus(byte returnStatus, int bytesWritten, const cha
     }
 }
 
-//////////////////////////////////////////////////////////////////////
 // Read register at the 8-bit address via I2C; returns the 16-bit value
-//////////////////////////////////////////////////////////////////////
 uint16_t I2C_RW::readReg8Addr16Data(byte regAddr, int numBytesToRead, String action, bool verbose) {
     
     // Attempts a number of retries in case the data is not initially ready
@@ -130,9 +120,7 @@ uint16_t I2C_RW::readReg8Addr16Data(byte regAddr, int numBytesToRead, String act
     return -1;
 }
 
-//////////////////////////////////////////////////////////////////////
 // Write register at the 8-bit address via I2C with the provided data
-//////////////////////////////////////////////////////////////////////
 void I2C_RW::writeReg8Addr16Data(byte regAddr, uint16_t data, String action, bool verbose) {
     // Enable I2C connection
     Wire.beginTransmission(i2cAddress);
@@ -146,12 +134,10 @@ void I2C_RW::writeReg8Addr16Data(byte regAddr, uint16_t data, String action, boo
         printI2cReturnStatus(returnStatus, bytesWritten, action.c_str());
 }
 
-//////////////////////////////////////////////////////////////////////
 // Write register at the 8-bit address via I2C with the 16-bit data.
 // This method ensures the register is written by doing a read right
 // afterward to confirm the value has been set. If not, it will retry
 // several times, based on the retry limit
-//////////////////////////////////////////////////////////////////////
 bool I2C_RW::writeReg8Addr16DataWithProof(byte regAddr, int numBytesToWrite, uint16_t data, String action, bool verbose) {
     
     // Read existing value
@@ -177,5 +163,3 @@ bool I2C_RW::writeReg8Addr16DataWithProof(byte regAddr, int numBytesToWrite, uin
     Serial.printf("\tERROR: I2C FAILED to write REG[0x%02X]: 0x%04X =X=> 0x%04X (%s)\n", regAddr, existingData, data, action.c_str());
     return false;
 }
-
-// Useful: https://github.com/sparkfun/SparkFun_VCNL4040_Arduino_Library/blob/master/src/SparkFun_VCNL4040_Arduino_Library.cpp
